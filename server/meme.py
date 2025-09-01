@@ -1,22 +1,19 @@
-from flask import Flask
+from flask import Flask, Response, request
 from flask_cors import CORS
-from flask import request
 import sqlite3
 import requests
 import os
 import schedule
 import time
 from dotenv import load_dotenv
-from vonage import Auth, Vonage
-from vonage_messages import MmsImage, MmsResource
+from twilio.rest import Client
 load_dotenv()
 
-VONAGE_APP_ID = os.getenv('VONAGE_APP_ID')
+account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 
-
-client = Vonage(Auth(application_id = VONAGE_APP_ID, private_key = 'private.key'))
-
-
+client = Client(account_sid, auth_token)
 
 base_url = 'https://meme-api.com/gimme'
 
@@ -57,14 +54,13 @@ def sendMemeOnSignUp(number):
         
         meme = getRandomMeme()
         meme_url = meme['url']
-        response = MmsImage( 
-            from_= "16134343047",
+        response = client.messages.create( 
+            body="Here is your daily meme!",
+            from_= twilio_number,
             to=number,
-            text='Here is yor daily meme!',
-            image=MmsResource(url=meme_url),
-            
+            media_url=[meme_url]
         )
-        client.messages.send(response)
+        
     except Exception as e:
         print(f'Could not get meme {e}')
         
@@ -82,20 +78,17 @@ def sendDailyMeme():
             meme = getRandomMeme()
             meme_url = meme["url"]
 
-            response = MmsImage( 
-            from_= "16134343047",
-            to=number,
-            text='Here is yor daily meme!',
-            image=MmsResource(url=meme_url),
-        )
-        client.messages.send(response)
-            
+            response = client.messages.create( 
+                body="Here is your daily meme!",
+                from_= twilio_number,
+                to=number,
+                media_url=[meme_url]
+            )
+        
+      
     except:
         print('Could not send meme')
         
-
-
-
 
 
 @app.route('/submit/<phoneNumber>')
@@ -103,7 +96,7 @@ def submit(phoneNumber):
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
     try:
-        cursor.execute("INSERT INTO numbers  VALUES ({phoneNumber})".format(phoneNumber = phoneNumber))
+        cursor.execute("INSERT INTO numbers VALUES ({phoneNumber})".format(phoneNumber = phoneNumber))
         connection.commit()
         message = f"You will now receive daily memes at {phoneNumber}"
         sendMemeOnSignUp(phoneNumber)
@@ -141,8 +134,27 @@ def deletePhoneNumber(phoneNumber):
     return {'deleteMessage' : message}
 
 
-
-
+@app.route("/sms", methods=["POST"])
+def sms_reply():
+    from_number = request.form.get("From")
+    message_body = request.form.get("Body")
+    connection = sqlite3.connect('store_phoneNumbers.db')
+    cursor = connection.cursor()
+    if message_body == 'STOP':
+        
+        cursor.execute('DELETE FROM numbers WHERE number =?' ,(from_number,))
+        connection.commit()
+        print(f'Unsubcribed {from_number}')
+      
+    
+    elif message_body == 'START':
+        cursor.execute("INSERT INTO numbers (number) VALUES (?)", (from_number,))
+        connection.commit()
+        print(f"{from_number} resubscribed!")
+        
+        
+    connection.close()
+    return Response("<Response></Response>", mimetype="text/xml") 
 if __name__ == '__main__':
     app.run(debug=True)
     
