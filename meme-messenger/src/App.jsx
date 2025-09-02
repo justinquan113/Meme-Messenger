@@ -75,10 +75,6 @@ function App() {
         </div>
        
       </form>
-      <button onClick={handleClick}>GET ALL</button>
-      <label>Delete Number from DB</label>
-      <input onChange={(e) => setDeletedPhoneNumber(e.target.value)} ></input>
-      <button onClick={handleDelete}>Delete Number</button>
     </div>
   )
 }
