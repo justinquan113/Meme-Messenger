@@ -115,7 +115,7 @@ def submit(phoneNumber):
     return {'message': message}
 
 
-
+'''
 @app.route('/show')
 def showNumbers():
     connection = sqlite3.connect('store_phoneNumbers.db')
@@ -126,8 +126,8 @@ def showNumbers():
     
     return {'registered_numbers' : results}
             
-
-
+'''
+'''
 @app.route('/delete/<phoneNumber>', methods=['DELETE'])
 def deletePhoneNumber(phoneNumber):
     connection = sqlite3.connect('store_phoneNumbers.db')
@@ -138,12 +138,12 @@ def deletePhoneNumber(phoneNumber):
     message = f"removed {phoneNumber}"
     return {'deleteMessage' : message}
 
-
+'''
 @app.route("/sms", methods=["POST"])
 def sms_reply():
     from_number = request.form.get("From")
     message_body = request.form.get("Body", "").strip().upper()
-    print(from_number)
+    
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
     if message_body == 'STOP':
@@ -177,6 +177,10 @@ def daily_meme():
 
 scheduler.start()
 
+
+@app.route('/health')
+def health_check():
+    return "OK", 200
 
 if __name__ == '__main__':
     app.run(debug=True)
