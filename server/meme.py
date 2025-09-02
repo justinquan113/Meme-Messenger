@@ -7,6 +7,8 @@ import schedule
 import time
 from dotenv import load_dotenv
 from twilio.rest import Client
+from apscheduler.schedulers.background import BackgroundScheduler
+
 load_dotenv()
 
 account_sid = os.getenv("TWILIO_ACCOUNT_SID")
@@ -14,6 +16,8 @@ auth_token = os.getenv("TWILIO_AUTH_TOKEN")
 twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 
 client = Client(account_sid, auth_token)
+
+scheduler = BackgroundScheduler()
 
 base_url = 'https://meme-api.com/gimme'
 
@@ -26,7 +30,7 @@ connection = sqlite3.connect('store_phoneNumbers.db')
 cursor = connection.cursor()
 
 command1 = """CREATE TABLE IF NOT EXISTS
-numbers(number INTEGER PRIMARY KEY)"""
+users(number TEXT PRIMARY KEY,  subscribed INTEGER DEFAULT 1)"""
 
 cursor.execute(command1)
 connection.commit()
@@ -44,7 +48,7 @@ def sendMemeOnSignUp(number):
     try:
         connection = sqlite3.connect('store_phoneNumbers.db')
         cursor = connection.cursor()
-        cursor.execute('SELECT number FROM numbers WHERE number = ?', (number,))
+        cursor.execute('SELECT number FROM users WHERE number = ?', (number,))
         result = cursor.fetchone()
         connection.close()
         
@@ -70,7 +74,7 @@ def sendDailyMeme():
     try:
         connection = sqlite3.connect('store_phoneNumbers.db')
         cursor = connection.cursor()
-        cursor.execute('SELECT * FROM numbers')
+        cursor.execute('SELECT * FROM users WHERE subscribed = 1')
         result = cursor.fetchall()
         connection.close()
         for row in result:
@@ -96,7 +100,8 @@ def submit(phoneNumber):
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
     try:
-        cursor.execute("INSERT INTO numbers VALUES ({phoneNumber})".format(phoneNumber = phoneNumber))
+        cursor.execute('INSERT INTO users (number, subscribed) VALUES (?, ?)', (phoneNumber, 1))
+
         connection.commit()
         message = f"You will now receive daily memes at {phoneNumber}"
         sendMemeOnSignUp(phoneNumber)
@@ -115,7 +120,7 @@ def submit(phoneNumber):
 def showNumbers():
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
-    cursor.execute('SELECT * FROM numbers')
+    cursor.execute('SELECT * FROM users')
     results = cursor.fetchall()
     connection.close()
     
@@ -127,7 +132,7 @@ def showNumbers():
 def deletePhoneNumber(phoneNumber):
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
-    cursor.execute('DELETE FROM numbers WHERE number =?' ,(phoneNumber,))
+    cursor.execute('DELETE FROM users WHERE number =?' ,(phoneNumber,))
     connection.commit()
     connection.close()
     message = f"removed {phoneNumber}"
@@ -137,24 +142,42 @@ def deletePhoneNumber(phoneNumber):
 @app.route("/sms", methods=["POST"])
 def sms_reply():
     from_number = request.form.get("From")
-    message_body = request.form.get("Body")
+    message_body = request.form.get("Body", "").strip().upper()
+    print(from_number)
     connection = sqlite3.connect('store_phoneNumbers.db')
     cursor = connection.cursor()
     if message_body == 'STOP':
+        try:
+            cursor.execute('UPDATE users SET subscribed = 0 WHERE number = ?', (from_number,))
+            connection.commit()
+            print(f'Unsubcribed {from_number}')
         
-        cursor.execute('DELETE FROM numbers WHERE number =?' ,(from_number,))
-        connection.commit()
-        print(f'Unsubcribed {from_number}')
+        except Exception as e:
+            print(f'Error {e}')
       
     
     elif message_body == 'START':
-        cursor.execute("INSERT INTO numbers (number) VALUES (?)", (from_number,))
-        connection.commit()
-        print(f"{from_number} resubscribed!")
+        try:
+            
+            cursor.execute('UPDATE users SET subscribed = 1 WHERE number = ?', (from_number,))
+            connection.commit()
+            print(f"{from_number} resubscribed!")
+            
+        except Exception as e:
+            print(f'Error {e}')
         
         
     connection.close()
     return Response("<Response></Response>", mimetype="text/xml") 
+
+
+@scheduler.scheduled_job('cron', hour=10)
+def daily_meme():
+    sendDailyMeme()
+
+scheduler.start()
+
+
 if __name__ == '__main__':
     app.run(debug=True)
     
