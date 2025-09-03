@@ -3,8 +3,6 @@ from flask_cors import CORS
 import sqlite3
 import requests
 import os
-import schedule
-import time
 from dotenv import load_dotenv
 from twilio.rest import Client
 from apscheduler.schedulers.background import BackgroundScheduler
