@@ -9,7 +9,7 @@ function App() {
   const [deletedPhoneNumber, setDeletedPhoneNumber] = useState('')
   function handleSubmit(e){
     e.preventDefault()
-    fetch(`http://127.0.0.1:5000/submit/${phoneNumber}`)
+    fetch(`https://meme-messenger.onrender.com/submit/${phoneNumber}`)
      .then(response =>{
         return response.json()
     })
@@ -27,7 +27,7 @@ function App() {
     }
   
   function handleClick(){
-    fetch('http://127.0.0.1:5000/show')
+    fetch('https://meme-messenger.onrender.com/show')
     .then(res => {
       return res.json()
     })
@@ -38,7 +38,7 @@ function App() {
 
 
   function handleDelete(){
-    fetch(`http://127.0.0.1:5000/delete/${deletedPhoneNumber}`, {
+    fetch(`https://meme-messenger.onrender.com/${deletedPhoneNumber}`, {
       method :'DELETE'
     })
 
