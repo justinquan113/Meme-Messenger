@@ -22,7 +22,7 @@ scheduler = BackgroundScheduler()
 base_url = 'https://meme-api.com/gimme'
 
 app = Flask(__name__)
-#CORS(app)
+CORS(app)
 
 connection = sqlite3.connect('store_phoneNumbers.db')
 
