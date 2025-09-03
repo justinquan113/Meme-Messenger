@@ -15,7 +15,7 @@ twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 
 client = Client(account_sid, auth_token)
 
-scheduler = BackgroundScheduler()
+
 
 base_url = 'https://meme-api.com/gimme'
 
@@ -113,7 +113,7 @@ def submit(phoneNumber):
     return {'message': message}
 
 
-'''
+
 @app.route('/show')
 def showNumbers():
     connection = sqlite3.connect('store_phoneNumbers.db')
@@ -124,7 +124,7 @@ def showNumbers():
     
     return {'registered_numbers' : results}
             
-'''
+
 '''
 @app.route('/delete/<phoneNumber>', methods=['DELETE'])
 def deletePhoneNumber(phoneNumber):
@@ -169,11 +169,7 @@ def sms_reply():
     return Response("<Response></Response>", mimetype="text/xml") 
 
 
-@scheduler.scheduled_job('cron', hour=10)
-def daily_meme():
-    sendDailyMeme()
 
-scheduler.start()
 
 
 @app.route('/health')
@@ -181,7 +177,7 @@ def health_check():
     return "OK", 200
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
     
 
     
