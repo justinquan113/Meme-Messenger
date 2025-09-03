@@ -22,7 +22,7 @@ scheduler = BackgroundScheduler()
 base_url = 'https://meme-api.com/gimme'
 
 app = Flask(__name__)
-CORS(app)
+#CORS(app)
 
 connection = sqlite3.connect('store_phoneNumbers.db')
 
@@ -183,7 +183,7 @@ def health_check():
     return "OK", 200
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=False)
     
 
     
