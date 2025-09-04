@@ -169,8 +169,13 @@ def sms_reply():
     return Response("<Response></Response>", mimetype="text/xml") 
 
 
+scheduler = BackgroundScheduler()
 
+@scheduler.scheduled_job('cron', second=9)
+def daily_meme():
+    sendDailyMeme()
 
+scheduler.start()
 
 @app.route('/health')
 def health_check():
