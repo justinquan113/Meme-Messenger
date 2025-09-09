@@ -4,7 +4,6 @@ import requests
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
-from apscheduler.schedulers.background import BackgroundScheduler
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 load_dotenv()
@@ -18,12 +17,7 @@ aws_secret_key = os.getenv("AWS_SECRET_KEY")
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1',aws_access_key_id = aws_access_key, aws_secret_access_key = aws_secret_key)
 table = dynamodb.Table('Subscribers')
 
-
-
-
 client = Client(account_sid, auth_token)
-
-
 
 base_url = 'https://meme-api.com/gimme'
 
@@ -108,20 +102,10 @@ def submit(phoneNumber):
 def delete(phonenumber):
     table.delete_item(
     Key={
-        'phonenumber': phonenumber  # primary key
+        'phonenumber': phonenumber
     }
     )
     return {'message': f'deleted {phonenumber}'}
-    
-    
-
-        
-@app.route('/show')
-def show():
-    response = table.scan()
-    items = response["Items"]
- 
-    return {'items': items}
 
 
 @app.route("/sms", methods=["POST"])
@@ -129,11 +113,9 @@ def sms_reply():
     from_number = request.form.get("From")
     normalized_number = from_number.lstrip("+")
     message_body = request.form.get("Body", "").strip().upper()
-    print(normalized_number)
     response = table.get_item(Key={'phonenumber' : normalized_number})
     item = response.get('Item')
     
-    print(item)
     if message_body == 'STOP' and item:
         table.update_item(
             Key={'phonenumber': normalized_number,},
