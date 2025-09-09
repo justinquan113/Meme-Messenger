@@ -9,7 +9,7 @@ function App() {
   const [deletedPhoneNumber, setDeletedPhoneNumber] = useState('')
   function handleSubmit(e){
     e.preventDefault()
-    fetch(`https://meme-messenger.onrender.com/submit/${phoneNumber}`)
+    fetch(`http://127.0.0.1:5000/submit/${phoneNumber}`)
      .then(response =>{
         return response.json()
     })
@@ -27,7 +27,7 @@ function App() {
     }
   
   function handleClick(){
-    fetch('https://meme-messenger.onrender.com/show')
+    fetch('http://127.0.0.1:5000/show')
     .then(res => {
       return res.json()
     })
@@ -71,7 +71,7 @@ function App() {
           </div>
           <button className='w-3/4 bg-blue-300 rounded-md self-center cursor-pointer' type='submit' >Enter</button>
           <p className='self-center'>{message}</p>
-         
+          
         </div>
        
       </form>

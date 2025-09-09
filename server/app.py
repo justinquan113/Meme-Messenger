@@ -1,17 +1,25 @@
 from flask import Flask, Response, request
 from flask_cors import CORS
-import sqlite3
 import requests
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import boto3
+from boto3.dynamodb.conditions import Attr, Key
 load_dotenv()
 
 account_sid = os.getenv("TWILIO_ACCOUNT_SID")
 auth_token = os.getenv("TWILIO_AUTH_TOKEN")
 twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
+aws_access_key = os.getenv("AWS_ACCESS_KEY")
+aws_secret_key = os.getenv("AWS_SECRET_KEY")
+
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1',aws_access_key_id = aws_access_key, aws_secret_access_key = aws_secret_key)
+table = dynamodb.Table('Subscribers')
+
+
+
 
 client = Client(account_sid, auth_token)
 
@@ -22,17 +30,6 @@ base_url = 'https://meme-api.com/gimme'
 app = Flask(__name__)
 CORS(app)
 
-connection = sqlite3.connect('store_phoneNumbers.db')
-
-#interact with database
-cursor = connection.cursor()
-
-command1 = """CREATE TABLE IF NOT EXISTS
-users(number TEXT PRIMARY KEY,  subscribed INTEGER DEFAULT 1)"""
-
-cursor.execute(command1)
-connection.commit()
-connection.close()
 
 def getRandomMeme():
     response = requests.get(base_url)
@@ -44,16 +41,6 @@ def getRandomMeme():
 
 def sendMemeOnSignUp(number):
     try:
-        connection = sqlite3.connect('store_phoneNumbers.db')
-        cursor = connection.cursor()
-        cursor.execute('SELECT number FROM users WHERE number = ?', (number,))
-        result = cursor.fetchone()
-        connection.close()
-        
-        if result is None:
-            print('Number is not DB')
-            return
-        
         meme = getRandomMeme()
         meme_url = meme['url']
         response = client.messages.create( 
@@ -70,13 +57,11 @@ def sendMemeOnSignUp(number):
 
 def sendDailyMeme():
     try:
-        connection = sqlite3.connect('store_phoneNumbers.db')
-        cursor = connection.cursor()
-        cursor.execute('SELECT * FROM users WHERE subscribed = 1')
-        result = cursor.fetchall()
-        connection.close()
-        for row in result:
-            number = row[0]
+        response = table.scan(
+            FilterExpression=Attr('subscribed').eq(1)
+)
+        for item in response['Items']:
+            number = item['phonenumber']
             meme = getRandomMeme()
             meme_url = meme["url"]
 
@@ -88,94 +73,90 @@ def sendDailyMeme():
             )
         
       
-    except:
-        print('Could not send meme')
+    except Exception as e:
+        print(f'Could not send meme {e}')
         
 
 
 @app.route('/submit/<phoneNumber>')
 def submit(phoneNumber):
-    connection = sqlite3.connect('store_phoneNumbers.db')
-    cursor = connection.cursor()
-    try:
-        cursor.execute('INSERT INTO users (number, subscribed) VALUES (?, ?)', (phoneNumber, 1))
-
-        connection.commit()
-        message = f"You will now receive daily memes at {phoneNumber}"
-        sendMemeOnSignUp(phoneNumber)
-    except sqlite3.IntegrityError:
-        message = f"{phoneNumber} is already registered."
-   
+    response = table.get_item(
+        Key={'phonenumber': phoneNumber}
+    )
     
-    finally:
-        connection.close()
+    try:
+
+        if phoneNumber in response:
+            message = f'Number already registered'
+            return
+        
+        else:
+            table.put_item(
+                Item={
+                    'phonenumber': phoneNumber,
+                    'subscribed': 1
+                }
+            )
+            message = f"You will now receive daily memes at {phoneNumber}"
+            sendMemeOnSignUp(phoneNumber)
+    except:
+        print('Error')
         
     return {'message': message}
 
-
-
-@app.route('/show')
-def showNumbers():
-    connection = sqlite3.connect('store_phoneNumbers.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM users')
-    results = cursor.fetchall()
-    connection.close()
+@app.route('/delete/<phonenumber>')
+def delete(phonenumber):
+    table.delete_item(
+    Key={
+        'phonenumber': phonenumber  # primary key
+    }
+    )
+    return {'message': f'deleted {phonenumber}'}
     
-    return {'registered_numbers' : results}
-            
+    
 
-'''
-@app.route('/delete/<phoneNumber>', methods=['DELETE'])
-def deletePhoneNumber(phoneNumber):
-    connection = sqlite3.connect('store_phoneNumbers.db')
-    cursor = connection.cursor()
-    cursor.execute('DELETE FROM users WHERE number =?' ,(phoneNumber,))
-    connection.commit()
-    connection.close()
-    message = f"removed {phoneNumber}"
-    return {'deleteMessage' : message}
+        
+@app.route('/show')
+def show():
+    response = table.scan()
+    items = response["Items"]
+ 
+    return {'items': items}
 
-'''
+
 @app.route("/sms", methods=["POST"])
 def sms_reply():
     from_number = request.form.get("From")
+    normalized_number = from_number.lstrip("+")
     message_body = request.form.get("Body", "").strip().upper()
+    print(normalized_number)
+    response = table.get_item(Key={'phonenumber' : normalized_number})
+    item = response.get('Item')
     
-    connection = sqlite3.connect('store_phoneNumbers.db')
-    cursor = connection.cursor()
-    if message_body == 'STOP':
-        try:
-            cursor.execute('UPDATE users SET subscribed = 0 WHERE number = ?', (from_number,))
-            connection.commit()
-            print(f'Unsubcribed {from_number}')
+    print(item)
+    if message_body == 'STOP' and item:
+        table.update_item(
+            Key={'phonenumber': normalized_number,},
+            UpdateExpression='SET subscribed =:val',
+            ExpressionAttributeValues={':val': 0}
+        )
+            
+           
+        print(f'Unsubcribed {from_number}')
         
-        except Exception as e:
-            print(f'Error {e}')
-      
     
-    elif message_body == 'START':
-        try:
-            
-            cursor.execute('UPDATE users SET subscribed = 1 WHERE number = ?', (from_number,))
-            connection.commit()
-            print(f"{from_number} resubscribed!")
-            
-        except Exception as e:
-            print(f'Error {e}')
+    elif message_body == 'START' and item:
+        table.update_item(
+            Key={'phonenumber': normalized_number,},
+            UpdateExpression='SET subscribed =:val',
+            ExpressionAttributeValues={':val': 1}
+        )
+
+        print(f'{from_number} resubscribed')
         
-        
-    connection.close()
+    
     return Response("<Response></Response>", mimetype="text/xml") 
 
-
-scheduler = BackgroundScheduler()
-
-@scheduler.scheduled_job('cron', second=9)
-def daily_meme():
-    sendDailyMeme()
-
-scheduler.start()
 
 @app.route('/health')
 def health_check():
