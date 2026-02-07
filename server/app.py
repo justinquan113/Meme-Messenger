@@ -77,14 +77,18 @@ def submit(phoneNumber):
     response = table.get_item(
         Key={'phonenumber': phoneNumber}
     )
+    print(f"Phone number received: {phoneNumber}")
+    print(f"DynamoDB response: {response}")
     
     try:
 
-        if phoneNumber in response:
+        if 'Item' in response:
             message = f'Number already registered'
-            return
+            print("Number found in DB")
+           
         
         else:
+            print("Number NOT found, adding to DB")
             table.put_item(
                 Item={
                     'phonenumber': phoneNumber,
@@ -93,9 +97,10 @@ def submit(phoneNumber):
             )
             message = f"You will now receive daily memes at {phoneNumber}"
             sendMemeOnSignUp(phoneNumber)
+            
     except:
         print('Error')
-        
+        message = 'error occured '
     return {'message': message}
 
 @app.route('/delete/<phonenumber>')
