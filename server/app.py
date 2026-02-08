@@ -38,7 +38,7 @@ def sendMemeOnSignUp(number):
         meme = getRandomMeme()
         meme_url = meme['url']
         response = client.messages.create( 
-            body="Here is your daily meme!",
+            body="Here is your daily meme!\n\nReply STOP to opt out",
             from_= twilio_number,
             to=number,
             media_url=[meme_url]
