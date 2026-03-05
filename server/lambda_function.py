@@ -10,7 +10,7 @@ def lambda_handler(event, context):
     auth_token = os.environ['TWILIO_AUTH_TOKEN']
     twilio_number = os.environ['TWILIO_PHONE_NUMBER']
     
-    # AWS credentials (not needed if using IAM role)
+    # AWS credentials 
     client = Client(account_sid, auth_token)
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
     table = dynamodb.Table('Subscribers')
@@ -35,7 +35,7 @@ def lambda_handler(event, context):
                 
                 # Send via Twilio
                 client.messages.create(
-                    body="Here is your daily meme!",
+                    body="Here is your daily meme!\n Text STOP to unsubcribe",
                     from_=twilio_number,
                     to=number,
                     media_url=[meme_url]

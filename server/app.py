@@ -77,18 +77,17 @@ def submit(phoneNumber):
     response = table.get_item(
         Key={'phonenumber': phoneNumber}
     )
-    print(f"Phone number received: {phoneNumber}")
-    print(f"DynamoDB response: {response}")
+ 
     
     try:
 
         if 'Item' in response:
             message = f'Number already registered'
-            print("Number found in DB")
+            
            
         
         else:
-            print("Number NOT found, adding to DB")
+            
             table.put_item(
                 Item={
                     'phonenumber': phoneNumber,
@@ -99,7 +98,7 @@ def submit(phoneNumber):
             sendMemeOnSignUp(phoneNumber)
             
     except:
-        print('Error')
+        
         message = 'error occured '
     return {'message': message}
 
