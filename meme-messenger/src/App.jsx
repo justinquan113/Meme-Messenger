@@ -60,7 +60,7 @@ function App() {
     >
       
       <h1 className="text-3xl font-extrabold text-center text-gray-800">
-        😂 Meme Messenger
+         Meme Messenger
       </h1>
       <p className="text-center text-gray-500 text-sm">
         Get fresh memes sent straight to your phone every day.
@@ -92,7 +92,7 @@ function App() {
         type="submit"
         className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
       >
-        🚀 Send Me Memes
+         Send Me Memes
       </button>
 
       {message && (
