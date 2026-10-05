@@ -52,11 +52,11 @@ function App() {
   }
 
   return (
-  <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300 p-4">
-    
+  <div className="flex justify-center items-center min-h-screen bg-amber-50 p-4">
+
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-md bg-white/80 backdrop-blur-lg shadow-2xl rounded-2xl p-8 flex flex-col gap-6 transition-all duration-300 hover:scale-[1.02]"
+      className="w-full max-w-md bg-white shadow-2xl rounded-2xl p-8 flex flex-col gap-6 transition-all duration-300 hover:scale-[1.02]"
     >
       
       <h1 className="text-3xl font-extrabold text-center text-gray-800">
@@ -84,13 +84,13 @@ function App() {
             )
           }
           onInput={(e) => e.target.setCustomValidity("")}
-          className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 shadow-sm"
+          className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all duration-200 shadow-sm"
         />
       </div>
 
       <button
         type="submit"
-        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+        className="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
       >
          Send Me Memes
       </button>
