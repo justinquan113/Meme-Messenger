@@ -1,55 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 import './App.css'
 
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:5000'
+
 function App() {
-  
+
   const [phoneNumber, setPhoneNumber] = useState('')
   const [message, setMessage] = useState('')
-  const [deletedPhoneNumber, setDeletedPhoneNumber] = useState('')
   function handleSubmit(e){
     e.preventDefault()
-    fetch(`http://127.0.0.1:5000/submit/${phoneNumber}`)
+    fetch(`${API_URL}/submit/${phoneNumber}`)
      .then(response =>{
         return response.json()
     })
     .then(data =>{
         let message = data.message
-        
+
         setMessage(message)
       })
     .catch(error => {
       console.log(error)
+      setMessage('Something went wrong. Please try again.')
     })
 
     setPhoneNumber('')
-    
+
     }
-  
-  function handleClick(){
-    fetch('http://127.0.0.1:5000/show')
-    .then(res => {
-      return res.json()
-    })
-    .then(data =>{
-      console.log(data.registered_numbers)
-    })
-  }
-
-
-  function handleDelete(){
-    fetch(`https://meme-messenger.onrender.com/${deletedPhoneNumber}`, {
-      method :'DELETE'
-    })
-
-    .then(res => {
-      return res.json()
-    })
-    .then(data => {
-      console.log(data.message)
-    })
-    
-  }
 
   return (
   <div className="flex justify-center items-center min-h-screen bg-amber-50 p-4">

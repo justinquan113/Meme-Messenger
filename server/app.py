@@ -102,7 +102,7 @@ def submit(phoneNumber):
         message = 'error occured '
     return {'message': message}
 
-@app.route('/delete/<phonenumber>')
+@app.route('/delete/<phonenumber>', methods=['GET', 'DELETE'])
 def delete(phonenumber):
     table.delete_item(
     Key={
